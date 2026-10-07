@@ -42,8 +42,6 @@ async function getFFmpeg(
         "/ffmpeg-core/ffmpeg-core.js",
       wasmURL:
         "/ffmpeg-core/ffmpeg-core.wasm",
-      workerURL:
-        "/ffmpeg-core/ffmpeg-core.worker.js",
     });
 
     ffmpegInstance =
@@ -112,15 +110,44 @@ export async function transcribeVideo(
         "audio.wav"
       );
 
+    /*
+     * FFmpeg readFile() can return
+     * either a Uint8Array or a string.
+     *
+     * Whisper needs an ArrayBuffer.
+     * Avoid directly casting string -> ArrayBuffer.
+     */
+    if (
+      typeof audio ===
+      "string"
+    ) {
+      throw new Error(
+        "FFmpeg returned audio as text instead of binary data."
+      );
+    }
+
     const audioBytes =
       audio instanceof Uint8Array
         ? audio
         : new Uint8Array(
-            audio as ArrayBuffer
+            audio
           );
 
+    /*
+     * Create a real standalone
+     * ArrayBuffer instead of relying
+     * on Uint8Array.buffer being
+     * ArrayBuffer rather than
+     * ArrayBufferLike.
+     */
     const audioBuffer =
-      audioBytes.slice().buffer;
+      new ArrayBuffer(
+        audioBytes.byteLength
+      );
+
+    new Uint8Array(
+      audioBuffer
+    ).set(audioBytes);
 
     await ffmpeg.deleteFile(
       inputName
