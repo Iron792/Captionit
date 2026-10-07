@@ -173,12 +173,26 @@ export async function renderCaptionedVideo(
       );
     }
 
-    const bytes = output;
+    /*
+     * Convert Uint8Array<ArrayBufferLike>
+     * into a real ArrayBuffer.
+     *
+     * This avoids the TypeScript/Node 24
+     * BlobPart compatibility error.
+     */
+    const buffer =
+      new ArrayBuffer(
+        output.byteLength
+      );
+
+    new Uint8Array(
+      buffer
+    ).set(output);
 
     onProgress?.(100);
 
     return new Blob(
-      [bytes],
+      [buffer],
       {
         type: "video/mp4",
       }
