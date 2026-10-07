@@ -1,261 +1,430 @@
 "use client";
 
-type SubtitleStyle = {
-  fontFamily?: string;
-  fontSize?: number;
-  fontWeight?: number;
-  color?: string;
-  highlightColor?: string;
-  background?: string;
-  backgroundOpacity?: number;
-  position?: "top" | "center" | "bottom";
-  textAlign?: "left" | "center" | "right";
-};
+import type {
+  SubtitleAnimation,
+  SubtitleStyle,
+} from "@/types/subtitle";
 
 type StylePanelProps = {
-  style?: SubtitleStyle;
-  onChange?: (style: SubtitleStyle) => void;
+  style: SubtitleStyle;
+  setStyle: React.Dispatch<
+    React.SetStateAction<SubtitleStyle>
+  >;
+  animation: SubtitleAnimation;
+  setAnimation: React.Dispatch<
+    React.SetStateAction<SubtitleAnimation>
+  >;
 };
 
-const presets: Record<string, SubtitleStyle> = {
-  Classic: {
-    fontFamily: "Arial",
-    fontSize: 32,
-    fontWeight: 600,
-    color: "#ffffff",
-    highlightColor: "#facc15",
-    background: "#000000",
-    backgroundOpacity: 0.5,
-    position: "bottom",
-    textAlign: "center",
-  },
+const presets = [
+  "Classic",
+  "Bold",
+  "Creator",
+  "Minimal",
+  "Karaoke",
+  "Neon",
+  "Social",
+] as const;
 
-  Bold: {
-    fontFamily: "Arial",
-    fontSize: 40,
-    fontWeight: 800,
-    color: "#ffffff",
-    highlightColor: "#ef4444",
-    background: "#000000",
-    backgroundOpacity: 0.35,
-    position: "bottom",
-    textAlign: "center",
-  },
-
-  Creator: {
-    fontFamily: "Arial",
-    fontSize: 36,
-    fontWeight: 800,
-    color: "#ffffff",
-    highlightColor: "#a78bfa",
-    background: "#000000",
-    backgroundOpacity: 0.2,
-    position: "center",
-    textAlign: "center",
-  },
-
-  Minimal: {
-    fontFamily: "Arial",
-    fontSize: 28,
-    fontWeight: 500,
-    color: "#ffffff",
-    highlightColor: "#ffffff",
-    background: "#000000",
-    backgroundOpacity: 0,
-    position: "bottom",
-    textAlign: "center",
-  },
-
-  Karaoke: {
-    fontFamily: "Arial",
-    fontSize: 34,
-    fontWeight: 800,
-    color: "#ffffff",
-    highlightColor: "#22c55e",
-    background: "#000000",
-    backgroundOpacity: 0.4,
-    position: "bottom",
-    textAlign: "center",
-  },
-
-  Neon: {
-    fontFamily: "Arial",
-    fontSize: 34,
-    fontWeight: 800,
-    color: "#ffffff",
-    highlightColor: "#22d3ee",
-    background: "#000000",
-    backgroundOpacity: 0.35,
-    position: "center",
-    textAlign: "center",
-  },
-
-  Social: {
-    fontFamily: "Arial",
-    fontSize: 38,
-    fontWeight: 900,
-    color: "#ffffff",
-    highlightColor: "#f472b6",
-    background: "#000000",
-    backgroundOpacity: 0.25,
-    position: "bottom",
-    textAlign: "center",
-  },
-};
+const animations = [
+  "None",
+  "Fade",
+  "Pop",
+  "Bounce",
+  "Slide Up",
+  "Slide Down",
+  "Scale",
+  "Typewriter",
+  "Word Pop",
+  "Karaoke",
+] as const;
 
 export default function StylePanel({
-  style = presets.Classic,
-  onChange,
+  style,
+  setStyle,
+  animation,
+  setAnimation,
 }: StylePanelProps) {
-  const update = (changes: Partial<SubtitleStyle>) => {
-    onChange?.({
-      ...style,
+  const updateStyle = (
+    changes: Partial<SubtitleStyle>
+  ) => {
+    setStyle((current) => ({
+      ...current,
       ...changes,
-    });
+    }));
+  };
+
+  const updateAnimation = (
+    changes: Partial<SubtitleAnimation>
+  ) => {
+    setAnimation((current) => ({
+      ...current,
+      ...changes,
+    }));
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <h3 className="mb-4 font-medium text-white">
-        Subtitle Style
-      </h3>
+    <div className="space-y-5 overflow-y-auto pb-6">
+      {/* Presets */}
+      <section>
+        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Preset
+        </label>
 
-      <div className="grid grid-cols-2 gap-2">
-        {Object.entries(presets).map(([name, preset]) => (
-          <button
-            key={name}
-            type="button"
-            onClick={() => onChange?.(preset)}
-            className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-xs text-white transition hover:bg-white/10"
-          >
-            {name}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-5 space-y-4">
-        <div>
-          <label className="mb-1 block text-xs text-white/50">
-            Font
-          </label>
-
-          <select
-            value={style.fontFamily}
-            onChange={(e) =>
-              update({ fontFamily: e.target.value })
-            }
-            className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
-          >
-            <option>Arial</option>
-            <option>Inter</option>
-            <option>Georgia</option>
-            <option>Verdana</option>
-            <option>Impact</option>
-            <option>Courier New</option>
-          </select>
+        <div className="grid grid-cols-2 gap-2">
+          {presets.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() =>
+                updateStyle({
+                  preset,
+                })
+              }
+              className={`rounded-lg border px-3 py-2 text-left text-xs transition ${
+                style.preset === preset
+                  ? "border-cyan-400/40 bg-cyan-400/10 text-cyan-200"
+                  : "border-white/10 bg-white/[0.02] text-zinc-400 hover:bg-white/[0.05] hover:text-white"
+              }`}
+            >
+              {preset}
+            </button>
+          ))}
         </div>
+      </section>
 
-        <div>
-          <label className="mb-1 block text-xs text-white/50">
+      {/* Font */}
+      <section>
+        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Font
+        </label>
+
+        <select
+          value={style.font}
+          onChange={(event) =>
+            updateStyle({
+              font: event.target.value,
+            })
+          }
+          className="w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/40"
+        >
+          <option value="Inter">
+            Inter
+          </option>
+          <option value="Arial">
+            Arial
+          </option>
+          <option value="Helvetica">
+            Helvetica
+          </option>
+          <option value="Verdana">
+            Verdana
+          </option>
+          <option value="Georgia">
+            Georgia
+          </option>
+          <option value="Impact">
+            Impact
+          </option>
+          <option value="Courier New">
+            Courier New
+          </option>
+        </select>
+      </section>
+
+      {/* Size */}
+      <section>
+        <div className="mb-2 flex items-center justify-between">
+          <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
             Size
           </label>
 
-          <input
-            type="range"
-            min="12"
-            max="96"
-            value={style.fontSize}
-            onChange={(e) =>
-              update({
-                fontSize: Number(e.target.value),
-              })
-            }
-            className="w-full"
-          />
+          <span className="text-xs tabular-nums text-zinc-500">
+            {style.size}px
+          </span>
         </div>
 
-        <div>
-          <label className="mb-1 block text-xs text-white/50">
-            Text Color
+        <input
+          type="range"
+          min="16"
+          max="96"
+          step="1"
+          value={style.size}
+          onChange={(event) =>
+            updateStyle({
+              size: Number(
+                event.target.value
+              ),
+            })
+          }
+          className="w-full"
+        />
+      </section>
+
+      {/* Weight */}
+      <section>
+        <div className="mb-2 flex items-center justify-between">
+          <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+            Weight
           </label>
 
+          <span className="text-xs text-zinc-500">
+            {style.weight}
+          </span>
+        </div>
+
+        <input
+          type="range"
+          min="300"
+          max="900"
+          step="100"
+          value={style.weight}
+          onChange={(event) =>
+            updateStyle({
+              weight: Number(
+                event.target.value
+              ),
+            })
+          }
+          className="w-full"
+        />
+      </section>
+
+      {/* Text color */}
+      <section>
+        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Text color
+        </label>
+
+        <div className="flex gap-2">
           <input
             type="color"
             value={style.color}
-            onChange={(e) =>
-              update({ color: e.target.value })
+            onChange={(event) =>
+              updateStyle({
+                color: event.target.value,
+              })
             }
-            className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"
+            className="h-9 w-12 cursor-pointer rounded border border-white/10 bg-transparent"
+          />
+
+          <input
+            type="text"
+            value={style.color}
+            onChange={(event) =>
+              updateStyle({
+                color: event.target.value,
+              })
+            }
+            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 text-xs text-white outline-none"
           />
         </div>
+      </section>
 
-        <div>
-          <label className="mb-1 block text-xs text-white/50">
-            Highlight Color
-          </label>
+      {/* Highlight */}
+      <section>
+        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Highlight
+        </label>
 
+        <div className="flex gap-2">
           <input
             type="color"
             value={style.highlightColor}
-            onChange={(e) =>
-              update({
-                highlightColor: e.target.value,
+            onChange={(event) =>
+              updateStyle({
+                highlightColor:
+                  event.target.value,
               })
             }
-            className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"
+            className="h-9 w-12 cursor-pointer rounded border border-white/10 bg-transparent"
+          />
+
+          <input
+            type="text"
+            value={style.highlightColor}
+            onChange={(event) =>
+              updateStyle({
+                highlightColor:
+                  event.target.value,
+              })
+            }
+            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 text-xs text-white outline-none"
           />
         </div>
+      </section>
 
-        <div>
-          <label className="mb-1 block text-xs text-white/50">
-            Position
+      {/* Alignment */}
+      <section>
+        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Alignment
+        </label>
+
+        <div className="grid grid-cols-3 gap-1">
+          {(
+            ["left", "center", "right"] as const
+          ).map((align) => (
+            <button
+              key={align}
+              type="button"
+              onClick={() =>
+                updateStyle({
+                  align,
+                })
+              }
+              className={`rounded-lg border px-2 py-2 text-xs capitalize transition ${
+                style.align === align
+                  ? "border-cyan-400/40 bg-cyan-400/10 text-cyan-200"
+                  : "border-white/10 text-zinc-500 hover:text-white"
+              }`}
+            >
+              {align}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Position */}
+      <section>
+        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Position
+        </label>
+
+        <div className="grid grid-cols-3 gap-1">
+          {(
+            ["top", "center", "bottom"] as const
+          ).map((position) => (
+            <button
+              key={position}
+              type="button"
+              onClick={() =>
+                updateStyle({
+                  position,
+                })
+              }
+              className={`rounded-lg border px-2 py-2 text-xs capitalize transition ${
+                style.position === position
+                  ? "border-cyan-400/40 bg-cyan-400/10 text-cyan-200"
+                  : "border-white/10 text-zinc-500 hover:text-white"
+              }`}
+            >
+              {position}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Background opacity */}
+      <section>
+        <div className="mb-2 flex items-center justify-between">
+          <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+            Background
           </label>
 
-          <div className="grid grid-cols-3 gap-2">
-            {(["top", "center", "bottom"] as const).map(
-              (position) => (
-                <button
-                  key={position}
-                  type="button"
-                  onClick={() => update({ position })}
-                  className={`rounded-lg border px-2 py-2 text-xs capitalize ${
-                    style.position === position
-                      ? "border-white/30 bg-white/10 text-white"
-                      : "border-white/10 text-white/50"
-                  }`}
-                >
-                  {position}
-                </button>
-              )
-            )}
-          </div>
+          <span className="text-xs text-zinc-500">
+            {style.backgroundOpacity}%
+          </span>
         </div>
 
-        <div>
-          <label className="mb-1 block text-xs text-white/50">
-            Alignment
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={style.backgroundOpacity}
+          onChange={(event) =>
+            updateStyle({
+              backgroundOpacity:
+                Number(
+                  event.target.value
+                ),
+            })
+          }
+          className="w-full"
+        />
+      </section>
+
+      {/* Animation */}
+      <section className="border-t border-white/10 pt-5">
+        <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-zinc-500">
+          Animation
+        </label>
+
+        <select
+          value={animation.preset}
+          onChange={(event) =>
+            updateAnimation({
+              preset: event.target.value,
+            })
+          }
+          className="w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/40"
+        >
+          {animations.map((animationPreset) => (
+            <option
+              key={animationPreset}
+              value={animationPreset}
+            >
+              {animationPreset}
+            </option>
+          ))}
+        </select>
+      </section>
+
+      {/* Animation speed */}
+      <section>
+        <div className="mb-2 flex items-center justify-between">
+          <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+            Animation speed
           </label>
 
-          <div className="grid grid-cols-3 gap-2">
-            {(["left", "center", "right"] as const).map(
-              (textAlign) => (
-                <button
-                  key={textAlign}
-                  type="button"
-                  onClick={() => update({ textAlign })}
-                  className={`rounded-lg border px-2 py-2 text-xs capitalize ${
-                    style.textAlign === textAlign
-                      ? "border-white/30 bg-white/10 text-white"
-                      : "border-white/10 text-white/50"
-                  }`}
-                >
-                  {textAlign}
-                </button>
-              )
-            )}
-          </div>
+          <span className="text-xs text-zinc-500">
+            {animation.speed.toFixed(1)}x
+          </span>
         </div>
-      </div>
+
+        <input
+          type="range"
+          min="0.25"
+          max="3"
+          step="0.25"
+          value={animation.speed}
+          onChange={(event) =>
+            updateAnimation({
+              speed: Number(
+                event.target.value
+              ),
+            })
+          }
+          className="w-full"
+        />
+      </section>
+
+      {/* Animation intensity */}
+      <section>
+        <div className="mb-2 flex items-center justify-between">
+          <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+            Intensity
+          </label>
+
+          <span className="text-xs text-zinc-500">
+            {animation.intensity}%
+          </span>
+        </div>
+
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={animation.intensity}
+          onChange={(event) =>
+            updateAnimation({
+              intensity: Number(
+                event.target.value
+              ),
+            })
+          }
+          className="w-full"
+        />
+      </section>
     </div>
   );
 }
