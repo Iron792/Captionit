@@ -22,7 +22,7 @@ for (const file of files) {
   const target = path.join(destination, path.basename(file));
 
   if (!fs.existsSync(source)) {
-    console.warn(`FFmpeg file not found, skipping: ${source}`);
+    console.warn(`Skipping missing FFmpeg file: ${file}`);
     continue;
   }
 
