@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import {
+  useEffect,
+  useRef,
+} from "react";
+
 import type {
   SubtitleSegment,
   SubtitleStyle,
@@ -11,7 +15,9 @@ type VideoPreviewProps = {
   currentTime: number;
   onTime: (time: number) => void;
   playing: boolean;
-  setPlaying: (playing: boolean) => void;
+  setPlaying: (
+    playing: boolean
+  ) => void;
   segments: SubtitleSegment[];
   style: SubtitleStyle;
 };
@@ -25,128 +31,202 @@ export default function VideoPreview({
   segments,
   style,
 }: VideoPreviewProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef =
+    useRef<HTMLVideoElement>(null);
+
+  const activeSubtitle =
+    segments.find(
+      (segment) =>
+        currentTime >=
+          segment.start &&
+        currentTime <=
+          segment.end
+    );
 
   useEffect(() => {
-    const video = videoRef.current;
+    const video =
+      videoRef.current;
+
     if (!video) return;
 
     if (playing) {
-      void video.play().catch(() => {
-        setPlaying(false);
-      });
+      void video.play();
     } else {
       video.pause();
     }
-  }, [playing, setPlaying]);
+  }, [playing]);
 
   useEffect(() => {
-    const video = videoRef.current;
+    const video =
+      videoRef.current;
+
     if (!video) return;
 
     if (
-      Math.abs(video.currentTime - currentTime) > 0.3
+      Math.abs(
+        video.currentTime -
+          currentTime
+      ) > 0.15
     ) {
-      video.currentTime = currentTime;
+      video.currentTime =
+        currentTime;
     }
   }, [currentTime]);
 
-  const activeSubtitle = segments.find(
-    (segment) =>
-      currentTime >= segment.start &&
-      currentTime <= segment.end
-  );
+  const handleTimeUpdate =
+    () => {
+      const video =
+        videoRef.current;
+
+      if (!video) return;
+
+      onTime(
+        video.currentTime
+      );
+    };
 
   const subtitlePosition =
     style.position === "top"
       ? {
-          top: "8%",
-          transform: "translateX(-50%)",
+          top: `${style.y || 10}%`,
+          left: `${style.x || 50}%`,
+          transform:
+            "translateX(-50%)",
         }
-      : style.position === "center"
-        ? {
-            top: "50%",
-            transform: "translate(-50%, -50%)",
-          }
-        : {
-            bottom: "10%",
-            transform: "translateX(-50%)",
-          };
+      : style.position ===
+        "center"
+      ? {
+          top: `${style.y || 50}%`,
+          left: `${style.x || 50}%`,
+          transform:
+            "translate(-50%, -50%)",
+        }
+      : {
+          bottom: `${100 - (style.y || 90)}%`,
+          left: `${style.x || 50}%`,
+          transform:
+            "translateX(-50%)",
+        };
 
   return (
-    <div className="flex h-full w-full items-center justify-center">
-      {/* Responsive video canvas */}
-      <div className="relative flex h-full max-h-[calc(100dvh-190px)] w-full max-w-5xl items-center justify-center overflow-hidden rounded-xl bg-black sm:rounded-2xl lg:max-h-full">
+    <div className="flex min-h-0 h-full w-full items-center justify-center">
+      <div className="relative flex h-full max-h-full w-full items-center justify-center overflow-hidden rounded-xl bg-black shadow-2xl sm:rounded-2xl">
         <video
           ref={videoRef}
           src={url}
           playsInline
           preload="metadata"
-          className="h-full w-full object-contain"
-          onTimeUpdate={(event) =>
-            onTime(
-              event.currentTarget.currentTime
-            )
+          className="block h-full w-full object-contain"
+          onTimeUpdate={
+            handleTimeUpdate
           }
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
-          onEnded={() => setPlaying(false)}
+          onPlay={() =>
+            setPlaying(true)
+          }
+          onPause={() =>
+            setPlaying(false)
+          }
+          onEnded={() =>
+            setPlaying(false)
+          }
         />
 
-        {/* Captions */}
         {activeSubtitle && (
           <div
-            className="pointer-events-none absolute left-1/2 max-w-[88%] text-center sm:max-w-[80%]"
-            style={{
-              ...subtitlePosition,
-              left: `${style.x}%`,
-              fontFamily: style.font,
-              fontSize: `clamp(18px, 3vw, ${style.size}px)`,
-              fontWeight: style.weight,
-              letterSpacing: `${style.letterSpacing}px`,
-              lineHeight: style.lineHeight,
-              color: style.color,
-              textAlign: style.align,
-              padding: `${style.padding}px`,
-              borderRadius: `${style.radius}px`,
-              backgroundColor: style.background,
-              background:
-                style.backgroundOpacity > 0
-                  ? `${style.background}${Math.round(
-                      (style.backgroundOpacity /
-                        100) *
-                        255
-                    )
-                      .toString(16)
-                      .padStart(2, "0")}`
-                  : "transparent",
-              textShadow:
-                style.shadow > 0
-                  ? `0 2px ${style.shadow}px rgba(0,0,0,.9)`
-                  : "none",
-              WebkitTextStroke:
-                style.outline > 0
-                  ? `${style.outline}px rgba(0,0,0,.8)`
-                  : undefined,
-            }}
+            className="pointer-events-none absolute max-w-[88%] text-center"
+            style={
+              subtitlePosition
+            }
           >
-            {activeSubtitle.text}
+            <span
+              style={{
+                display:
+                  "inline-block",
+                color:
+                  style.color ||
+                  "#ffffff",
+                fontFamily:
+                  style.font ||
+                  "Arial",
+                fontSize: `clamp(16px, 4vw, ${style.size || 42}px)`,
+                fontWeight:
+                  style.weight ||
+                  700,
+                letterSpacing: `${style.letterSpacing || 0}px`,
+                lineHeight:
+                  style.lineHeight ||
+                  1.1,
+                background:
+                  style.background ||
+                  "#000000",
+                backgroundColor:
+                  style.background
+                    ? style.background
+                    : undefined,
+                padding: `${style.padding || 8}px`,
+                borderRadius: `${style.radius || 8}px`,
+                textShadow:
+                  style.shadow
+                    ? `0 ${style.shadow}px ${style.shadow * 2}px rgba(0,0,0,.65)`
+                    : "none",
+                WebkitTextStroke:
+                  style.outline
+                    ? `${Math.max(
+                        1,
+                        style.outline
+                      )}px rgba(0,0,0,.75)`
+                    : undefined,
+              }}
+            >
+              {activeSubtitle.text}
+            </span>
           </div>
         )}
 
-        {/* Compact controls */}
-        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/10 bg-black/80 px-4 py-2 backdrop-blur sm:bottom-4">
-          <button
-            type="button"
-            onClick={() => setPlaying(!playing)}
-            className="text-xs font-medium text-white"
-          >
-            {playing ? "Pause" : "Play"}
-          </button>
+        <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
+          <div className="mx-auto flex max-w-md items-center gap-2 rounded-full border border-white/10 bg-black/70 px-2 py-2 text-xs text-white shadow-xl backdrop-blur-xl">
+            <button
+              type="button"
+              onClick={() =>
+                setPlaying(!playing)
+              }
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-black"
+            >
+              {playing ? "Ⅱ" : "▶"}
+            </button>
 
-          <span className="text-xs tabular-nums text-zinc-400">
-            {currentTime.toFixed(1)}s
-          </span>
+            <div className="min-w-0 flex-1">
+              <div className="h-1 overflow-hidden rounded-full bg-white/20">
+                <div
+                  className="h-full rounded-full bg-white transition-[width]"
+                  style={{
+                    width: `${
+                      Math.max(
+                        0,
+                        Math.min(
+                          100,
+                          (currentTime /
+                            Math.max(
+                              1,
+                              segments.at(
+                                -1
+                              )?.end ||
+                                currentTime ||
+                                1
+                            )) *
+                            100
+                        )
+                      )
+                    }%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            <span className="shrink-0 tabular-nums">
+              {currentTime.toFixed(1)}s
+            </span>
+          </div>
         </div>
       </div>
     </div>
