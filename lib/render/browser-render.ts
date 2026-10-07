@@ -32,8 +32,6 @@ async function getFFmpeg(
         "/ffmpeg-core/ffmpeg-core.js",
       wasmURL:
         "/ffmpeg-core/ffmpeg-core.wasm",
-      workerURL:
-        "/ffmpeg-core/ffmpeg-core.worker.js",
     });
 
     ffmpegInstance =
@@ -66,6 +64,7 @@ async function getFFmpeg(
 
   return {
     ffmpeg,
+
     cleanup() {
       ffmpeg.off(
         "progress",
@@ -166,12 +165,24 @@ export async function renderCaptionedVideo(
         outputName
       );
 
-    const bytes =
+    let bytes: Uint8Array;
+
+    if (
       output instanceof Uint8Array
-        ? output
-        : new Uint8Array(
-            output as ArrayBuffer
-          );
+    ) {
+      bytes = output;
+    } else if (
+      output instanceof ArrayBuffer
+    ) {
+      bytes =
+        new Uint8Array(
+          output
+        );
+    } else {
+      throw new Error(
+        "FFmpeg returned an unexpected output format."
+      );
+    }
 
     onProgress?.(100);
 
