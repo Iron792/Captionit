@@ -1,139 +1,179 @@
 "use client";
 
-type SubtitleSegment = {
-  id: string;
-  start: number;
-  end: number;
-  text: string;
-};
+import type { SubtitleSegment } from "@/types/subtitle";
 
 type SubtitleEditorProps = {
-  subtitles?: SubtitleSegment[];
-  selectedId?: string;
-  onSelect?: (id: string) => void;
-  onUpdate?: (subtitles: SubtitleSegment[]) => void;
+  items: SubtitleSegment[];
+  selected: string | null;
+  onSelect: (id: string) => void;
+  onChange: (items: SubtitleSegment[]) => void;
 };
 
 export default function SubtitleEditor({
-  subtitles = [],
-  selectedId,
+  items,
+  selected,
   onSelect,
-  onUpdate,
+  onChange,
 }: SubtitleEditorProps) {
-  const update = (
+  const updateItem = (
     id: string,
     changes: Partial<SubtitleSegment>
   ) => {
-    onUpdate?.(
-      subtitles.map((item) =>
+    onChange(
+      items.map((item) =>
         item.id === id
-          ? { ...item, ...changes }
+          ? {
+              ...item,
+              ...changes,
+            }
           : item
       )
     );
   };
 
-  const addSubtitle = () => {
-    const last = subtitles[subtitles.length - 1];
+  const addItem = () => {
+    const last = items.at(-1);
 
-    const start = last ? last.end : 0;
+    const start = last?.end ?? 0;
 
-    const newSubtitle: SubtitleSegment = {
+    const newItem: SubtitleSegment = {
       id: crypto.randomUUID(),
       start,
       end: start + 2,
-      text: "New subtitle",
+      text: "New caption",
     };
 
-    onUpdate?.([...subtitles, newSubtitle]);
+    onChange([...items, newItem]);
+    onSelect(newItem.id);
   };
 
-  const deleteSubtitle = (id: string) => {
-    onUpdate?.(
-      subtitles.filter((item) => item.id !== id)
+  const deleteItem = (
+    event: React.MouseEvent,
+    id: string
+  ) => {
+    event.stopPropagation();
+
+    onChange(
+      items.filter(
+        (item) => item.id !== id
+      )
     );
+
+    if (selected === id) {
+      onSelect("");
+    }
   };
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-medium text-white">
-          Captions
-        </h3>
+    <div className="h-full overflow-y-auto p-3">
+      <button
+        type="button"
+        onClick={addItem}
+        className="mb-3 w-full rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black transition hover:bg-zinc-200"
+      >
+        + Add caption
+      </button>
 
-        <button
-          type="button"
-          onClick={addSubtitle}
-          className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-black transition hover:bg-white/90"
-        >
-          + Add
-        </button>
-      </div>
-
-      <div className="space-y-3">
-        {subtitles.map((subtitle) => {
-          const selected = subtitle.id === selectedId;
+      <div className="space-y-2">
+        {items.map((item) => {
+          const isSelected =
+            item.id === selected;
 
           return (
             <div
-              key={subtitle.id}
-              onClick={() => onSelect?.(subtitle.id)}
-              className={`rounded-xl border p-3 transition ${
-                selected
-                  ? "border-white/30 bg-white/[0.08]"
-                  : "border-white/5 bg-white/[0.02]"
+              key={item.id}
+              onClick={() =>
+                onSelect(item.id)
+              }
+              className={`cursor-pointer rounded-xl border p-3 transition ${
+                isSelected
+                  ? "border-cyan-400/40 bg-cyan-400/10"
+                  : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04]"
               }`}
             >
               <textarea
-                value={subtitle.text}
-                onChange={(e) =>
-                  update(subtitle.id, {
-                    text: e.target.value,
+                value={item.text}
+                onChange={(event) =>
+                  updateItem(item.id, {
+                    text: event.target.value,
                   })
                 }
+                onClick={(event) =>
+                  event.stopPropagation()
+                }
                 rows={2}
-                className="w-full resize-none bg-transparent text-sm text-white outline-none"
+                className="w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-zinc-600"
+                placeholder="Enter caption..."
               />
 
               <div className="mt-3 flex items-center gap-2">
-                <label className="text-xs text-white/40">
-                  Start
-                </label>
+                <div className="flex min-w-0 flex-1 items-center gap-1">
+                  <label className="text-[10px] text-zinc-600">
+                    START
+                  </label>
 
-                <input
-                  type="number"
-                  step="0.1"
-                  value={subtitle.start}
-                  onChange={(e) =>
-                    update(subtitle.id, {
-                      start: Number(e.target.value),
-                    })
-                  }
-                  className="w-20 rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
-                />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={item.start}
+                    onChange={(event) =>
+                      updateItem(item.id, {
+                        start: Math.max(
+                          0,
+                          Number(
+                            event.target.value
+                          )
+                        ),
+                      })
+                    }
+                    onClick={(event) =>
+                      event.stopPropagation()
+                    }
+                    className="w-16 rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-white outline-none focus:border-cyan-400/40"
+                  />
+                </div>
 
-                <label className="ml-2 text-xs text-white/40">
-                  End
-                </label>
+                <span className="text-zinc-700">
+                  →
+                </span>
 
-                <input
-                  type="number"
-                  step="0.1"
-                  value={subtitle.end}
-                  onChange={(e) =>
-                    update(subtitle.id, {
-                      end: Number(e.target.value),
-                    })
-                  }
-                  className="w-20 rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-white"
-                />
+                <div className="flex min-w-0 flex-1 items-center gap-1">
+                  <label className="text-[10px] text-zinc-600">
+                    END
+                  </label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={item.end}
+                    onChange={(event) =>
+                      updateItem(item.id, {
+                        end: Math.max(
+                          0,
+                          Number(
+                            event.target.value
+                          )
+                        ),
+                      })
+                    }
+                    onClick={(event) =>
+                      event.stopPropagation()
+                    }
+                    className="w-16 rounded-md border border-white/10 bg-black/30 px-2 py-1 text-xs text-white outline-none focus:border-cyan-400/40"
+                  />
+                </div>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    deleteSubtitle(subtitle.id)
+                  onClick={(event) =>
+                    deleteItem(
+                      event,
+                      item.id
+                    )
                   }
-                  className="ml-auto text-xs text-red-400 hover:text-red-300"
+                  className="ml-auto text-xs text-red-400 transition hover:text-red-300"
                 >
                   Delete
                 </button>
@@ -142,9 +182,9 @@ export default function SubtitleEditor({
           );
         })}
 
-        {subtitles.length === 0 && (
-          <div className="rounded-xl border border-dashed border-white/10 p-8 text-center text-sm text-white/40">
-            No subtitles yet.
+        {items.length === 0 && (
+          <div className="rounded-xl border border-dashed border-white/10 px-4 py-10 text-center text-xs text-zinc-600">
+            No captions yet.
           </div>
         )}
       </div>
