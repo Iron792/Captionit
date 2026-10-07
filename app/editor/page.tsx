@@ -15,11 +15,11 @@ import {
   PanelRight,
 } from "lucide-react";
 
-import { UploadPanel } from "@/components/editor/UploadPanel";
-import { VideoPreview } from "@/components/editor/VideoPreview";
-import { SubtitleTimeline } from "@/components/editor/SubtitleTimeline";
-import { SubtitleEditor } from "@/components/editor/SubtitleEditor";
-import { StylePanel } from "@/components/editor/StylePanel";
+import UploadPanel from "@/components/editor/UploadPanel";
+import VideoPreview from "@/components/editor/VideoPreview";
+import SubtitleTimeline from "@/components/editor/SubtitleTimeline";
+import SubtitleEditor from "@/components/editor/SubtitleEditor";
+import StylePanel from "@/components/editor/StylePanel";
 
 import {
   SubtitleSegment,
