@@ -1,5 +1,4 @@
 import {
-  env,
   pipeline,
 } from "@huggingface/transformers";
 
@@ -38,21 +37,6 @@ type WorkerResponse =
       message: string;
     };
 
-/*
- * Do NOT use:
- *
- * type WhisperPipeline = Awaited<
- *   ReturnType<typeof pipeline>
- * >;
- *
- * Transformers.js has a very large overloaded
- * pipeline() type. TypeScript can fail with:
- * "Expression produces a union type that is too
- * complex to represent."
- *
- * Keep only the part of the pipeline API that
- * this worker actually uses.
- */
 type WhisperResult = {
   chunks?: WordChunk[];
 };
@@ -83,7 +67,7 @@ function post(
 async function getTranscriber(): Promise<WhisperTranscriber> {
   if (!transcriberPromise) {
     transcriberPromise =
-      (pipeline(
+      pipeline(
         "automatic-speech-recognition",
         MODEL,
         {
@@ -100,7 +84,7 @@ async function getTranscriber(): Promise<WhisperTranscriber> {
             (info) => {
               if (
                 info.status ===
-                "progress_total"
+                "progress"
               ) {
                 post({
                   type: "progress",
@@ -125,7 +109,7 @@ async function getTranscriber(): Promise<WhisperTranscriber> {
               }
             },
         }
-      ) as unknown as Promise<WhisperTranscriber>);
+      ) as unknown as Promise<WhisperTranscriber>;
   }
 
   return transcriberPromise;
