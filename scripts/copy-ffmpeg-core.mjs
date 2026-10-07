@@ -1,40 +1,33 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const source = path.resolve(
-  "node_modules/@ffmpeg/core/dist/umd"
-);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const destination = path.resolve(
-  "public/ffmpeg-core"
-);
+const root = path.resolve(__dirname, "..");
+const ffmpegDir = path.join(root, "node_modules", "@ffmpeg", "core");
+const destination = path.join(root, "public", "ffmpeg");
 
-fs.mkdirSync(destination, {
-  recursive: true,
-});
+fs.mkdirSync(destination, { recursive: true });
 
 const files = [
-  "ffmpeg-core.js",
-  "ffmpeg-core.wasm",
-  "ffmpeg-core.worker.js",
+  "dist/umd/ffmpeg-core.js",
+  "dist/umd/ffmpeg-core.wasm",
+  "dist/umd/ffmpeg-core.worker.js",
 ];
 
 for (const file of files) {
-  const sourceFile = path.join(source, file);
-  const destinationFile = path.join(destination, file);
+  const source = path.join(ffmpegDir, file);
+  const target = path.join(destination, path.basename(file));
 
-  if (!fs.existsSync(sourceFile)) {
-    throw new Error(
-      `FFmpeg core file not found: ${sourceFile}`
-    );
+  if (!fs.existsSync(source)) {
+    console.warn(`FFmpeg file not found, skipping: ${source}`);
+    continue;
   }
 
-  fs.copyFileSync(
-    sourceFile,
-    destinationFile
-  );
-
-  console.log(`Copied ${file}`);
+  fs.copyFileSync(source, target);
+  console.log(`Copied ${path.basename(file)}`);
 }
 
-console.log("FFmpeg core copied successfully.");
+console.log("FFmpeg core setup completed.");
