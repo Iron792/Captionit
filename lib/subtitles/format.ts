@@ -1,0 +1,5 @@
+import {SubtitleSegment} from '@/types/subtitle';
+const stamp=(s:number)=>{const ms=Math.round((s%1)*1000),t=Math.floor(s),sec=t%60,min=Math.floor(t/60)%60,hr=Math.floor(t/3600);return `${String(hr).padStart(2,'0')}:${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')},${String(ms).padStart(3,'0')}`};
+export function toSrt(items:SubtitleSegment[]){return items.map((x,i)=>`${i+1}\n${stamp(x.start)} --> ${stamp(x.end)}\n${x.text}\n`).join('\n')}
+export function toVtt(items:SubtitleSegment[]){return `WEBVTT\n\n${items.map(x=>`${stamp(x.start).replace(',','.')} --> ${stamp(x.end).replace(',','.')}\n${x.text}\n`).join('\n')}`}
+export function parseSrt(raw:string):SubtitleSegment[]{const blocks=raw.replace(/\r/g,'').split(/\n\n+/);return blocks.map((b,i)=>{const lines=b.split('\n').filter(Boolean);const time=lines.find(l=>l.includes('-->'))||'';const [a,c]=time.split('-->').map(v=>v.trim());const p=(v:string)=>{const m=v.match(/(?:(\d+):)?(\d{2}):(\d{2})[,.](\d{3})/);return m?(+(m[1]||0)*3600+ +m[2]*60+ +m[3]+ +m[4]/1000):0};return{id:`s-${Date.now()}-${i}`,start:p(a),end:p(c),text:lines.slice(lines.indexOf(time)+1).join(' ')}}).filter(x=>x.end>x.start)}
