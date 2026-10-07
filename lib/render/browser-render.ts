@@ -165,24 +165,15 @@ export async function renderCaptionedVideo(
         outputName
       );
 
-    let bytes: Uint8Array;
-
     if (
-      output instanceof Uint8Array
+      !(output instanceof Uint8Array)
     ) {
-      bytes = output;
-    } else if (
-      output instanceof ArrayBuffer
-    ) {
-      bytes =
-        new Uint8Array(
-          output
-        );
-    } else {
       throw new Error(
         "FFmpeg returned an unexpected output format."
       );
     }
+
+    const bytes = output;
 
     onProgress?.(100);
 
