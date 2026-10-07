@@ -27,16 +27,16 @@ const presets = [
 ] as const;
 
 const animations = [
-  "None",
-  "Fade",
-  "Pop",
-  "Bounce",
-  "Slide Up",
-  "Slide Down",
-  "Scale",
-  "Typewriter",
-  "Word Pop",
-  "Karaoke",
+  { label: "None", value: "none" },
+  { label: "Fade", value: "fade" },
+  { label: "Pop", value: "pop" },
+  { label: "Bounce", value: "bounce" },
+  { label: "Slide Up", value: "slide-up" },
+  { label: "Slide Down", value: "slide-down" },
+  { label: "Scale", value: "scale" },
+  { label: "Typewriter", value: "typewriter" },
+  { label: "Word Pop", value: "word-pop" },
+  { label: "Karaoke", value: "karaoke" },
 ] as const;
 
 export default function StylePanel({
@@ -108,24 +108,12 @@ export default function StylePanel({
           }
           className="w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/40"
         >
-          <option value="Inter">
-            Inter
-          </option>
-          <option value="Arial">
-            Arial
-          </option>
-          <option value="Helvetica">
-            Helvetica
-          </option>
-          <option value="Verdana">
-            Verdana
-          </option>
-          <option value="Georgia">
-            Georgia
-          </option>
-          <option value="Impact">
-            Impact
-          </option>
+          <option value="Inter">Inter</option>
+          <option value="Arial">Arial</option>
+          <option value="Helvetica">Helvetica</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Impact">Impact</option>
           <option value="Courier New">
             Courier New
           </option>
@@ -152,9 +140,7 @@ export default function StylePanel({
           value={style.size}
           onChange={(event) =>
             updateStyle({
-              size: Number(
-                event.target.value
-              ),
+              size: Number(event.target.value),
             })
           }
           className="w-full"
@@ -181,19 +167,17 @@ export default function StylePanel({
           value={style.weight}
           onChange={(event) =>
             updateStyle({
-              weight: Number(
-                event.target.value
-              ),
+              weight: Number(event.target.value),
             })
           }
           className="w-full"
         />
       </section>
 
-      {/* Text color */}
+      {/* Text Color */}
       <section>
         <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-zinc-500">
-          Text color
+          Text Color
         </label>
 
         <div className="flex gap-2">
@@ -216,7 +200,7 @@ export default function StylePanel({
                 color: event.target.value,
               })
             }
-            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 text-xs text-white outline-none"
+            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 text-xs text-white outline-none focus:border-cyan-400/40"
           />
         </div>
       </section>
@@ -233,8 +217,7 @@ export default function StylePanel({
             value={style.highlightColor}
             onChange={(event) =>
               updateStyle({
-                highlightColor:
-                  event.target.value,
+                highlightColor: event.target.value,
               })
             }
             className="h-9 w-12 cursor-pointer rounded border border-white/10 bg-transparent"
@@ -245,11 +228,10 @@ export default function StylePanel({
             value={style.highlightColor}
             onChange={(event) =>
               updateStyle({
-                highlightColor:
-                  event.target.value,
+                highlightColor: event.target.value,
               })
             }
-            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 text-xs text-white outline-none"
+            className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 text-xs text-white outline-none focus:border-cyan-400/40"
           />
         </div>
       </section>
@@ -275,7 +257,7 @@ export default function StylePanel({
               className={`rounded-lg border px-2 py-2 text-xs capitalize transition ${
                 style.align === align
                   ? "border-cyan-400/40 bg-cyan-400/10 text-cyan-200"
-                  : "border-white/10 text-zinc-500 hover:text-white"
+                  : "border-white/10 text-zinc-500 hover:bg-white/[0.04] hover:text-white"
               }`}
             >
               {align}
@@ -305,7 +287,7 @@ export default function StylePanel({
               className={`rounded-lg border px-2 py-2 text-xs capitalize transition ${
                 style.position === position
                   ? "border-cyan-400/40 bg-cyan-400/10 text-cyan-200"
-                  : "border-white/10 text-zinc-500 hover:text-white"
+                  : "border-white/10 text-zinc-500 hover:bg-white/[0.04] hover:text-white"
               }`}
             >
               {position}
@@ -314,7 +296,7 @@ export default function StylePanel({
         </div>
       </section>
 
-      {/* Background opacity */}
+      {/* Background Opacity */}
       <section>
         <div className="mb-2 flex items-center justify-between">
           <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
@@ -330,13 +312,13 @@ export default function StylePanel({
           type="range"
           min="0"
           max="100"
+          step="1"
           value={style.backgroundOpacity}
           onChange={(event) =>
             updateStyle({
-              backgroundOpacity:
-                Number(
-                  event.target.value
-                ),
+              backgroundOpacity: Number(
+                event.target.value
+              ),
             })
           }
           className="w-full"
@@ -353,27 +335,28 @@ export default function StylePanel({
           value={animation.preset}
           onChange={(event) =>
             updateAnimation({
-              preset: event.target.value,
+              preset:
+                event.target.value as SubtitleAnimation["preset"],
             })
           }
           className="w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-white outline-none focus:border-cyan-400/40"
         >
           {animations.map((animationPreset) => (
             <option
-              key={animationPreset}
-              value={animationPreset}
+              key={animationPreset.value}
+              value={animationPreset.value}
             >
-              {animationPreset}
+              {animationPreset.label}
             </option>
           ))}
         </select>
       </section>
 
-      {/* Animation speed */}
+      {/* Animation Speed */}
       <section>
         <div className="mb-2 flex items-center justify-between">
           <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-            Animation speed
+            Animation Speed
           </label>
 
           <span className="text-xs text-zinc-500">
@@ -389,19 +372,17 @@ export default function StylePanel({
           value={animation.speed}
           onChange={(event) =>
             updateAnimation({
-              speed: Number(
-                event.target.value
-              ),
+              speed: Number(event.target.value),
             })
           }
           className="w-full"
         />
       </section>
 
-      {/* Animation intensity */}
+      {/* Animation Intensity */}
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <label className="text-xs font-medium tracking-wider text-zinc-500">
             Intensity
           </label>
 
@@ -414,12 +395,11 @@ export default function StylePanel({
           type="range"
           min="0"
           max="100"
+          step="1"
           value={animation.intensity}
           onChange={(event) =>
             updateAnimation({
-              intensity: Number(
-                event.target.value
-              ),
+              intensity: Number(event.target.value),
             })
           }
           className="w-full"
