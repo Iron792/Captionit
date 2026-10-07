@@ -3,11 +3,11 @@
 import { useRef, useState } from "react";
 
 type UploadPanelProps = {
-  onVideoLoaded?: (url: string, file: File) => void;
+  onVideo: (file: File, url: string) => void;
 };
 
 export default function UploadPanel({
-  onVideoLoaded,
+  onVideo,
 }: UploadPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -16,47 +16,61 @@ export default function UploadPanel({
   const handleFile = (file?: File) => {
     if (!file) return;
 
-    const allowed = [
-      "video/mp4",
-      "video/quicktime",
-      "video/webm",
-      "video/x-matroska",
+    const extension = file.name
+      .split(".")
+      .pop()
+      ?.toLowerCase();
+
+    const allowedExtensions = [
+      "mp4",
+      "mov",
+      "webm",
+      "mkv",
     ];
 
-    const extension = file.name.split(".").pop()?.toLowerCase();
-
-    if (!allowed.includes(file.type) && !["mp4", "mov", "webm", "mkv"].includes(extension || "")) {
-      setError("Please upload an MP4, MOV, WebM, or MKV video.");
+    if (
+      !extension ||
+      !allowedExtensions.includes(extension)
+    ) {
+      setError(
+        "Please upload an MP4, MOV, WebM, or MKV video."
+      );
       return;
     }
 
     setError("");
 
     const url = URL.createObjectURL(file);
-    onVideoLoaded?.(url, file);
+
+    onVideo(file, url);
   };
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
       <div
-        onDragOver={(e) => {
-          e.preventDefault();
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(event) => {
+          event.preventDefault();
           setDragging(true);
         }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
+        onDragLeave={() => {
           setDragging(false);
-          handleFile(e.dataTransfer.files?.[0]);
         }}
-        onClick={() => inputRef.current?.click()}
+        onDrop={(event) => {
+          event.preventDefault();
+          setDragging(false);
+
+          handleFile(
+            event.dataTransfer.files?.[0]
+          );
+        }}
         className={`cursor-pointer rounded-xl border border-dashed p-10 text-center transition ${
           dragging
-            ? "border-white/50 bg-white/10"
+            ? "border-cyan-300 bg-cyan-300/10"
             : "border-white/15 hover:border-white/30 hover:bg-white/[0.04]"
         }`}
       >
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-xl">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-2xl">
           ↑
         </div>
 
@@ -77,7 +91,14 @@ export default function UploadPanel({
           type="file"
           accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mkv"
           className="hidden"
-          onChange={(e) => handleFile(e.target.files?.[0])}
+          onChange={(event) => {
+            handleFile(
+              event.target.files?.[0]
+            );
+
+            // Allow selecting the same file again.
+            event.target.value = "";
+          }}
         />
       </div>
 
