@@ -1,5 +1,261 @@
-'use client';
-import {SubtitleStyle,SubtitleAnimation} from '@/types/subtitle';
-const presets:Record<string,Partial<SubtitleStyle>>={Classic:{font:'Arial',size:32,weight:700,color:'#fff',highlightColor:'#facc15',background:'#000',backgroundOpacity:0},Bold:{font:'Arial',size:42,weight:900,color:'#fff',highlightColor:'#22d3ee',background:'#000',backgroundOpacity:35},Creator:{font:'Inter',size:38,weight:800,color:'#fff',highlightColor:'#a78bfa',background:'#18181b',backgroundOpacity:65},Minimal:{font:'Inter',size:30,weight:600,color:'#fff',highlightColor:'#fff',background:'#000',backgroundOpacity:0},Karaoke:{font:'Inter',size:36,weight:800,color:'#fff',highlightColor:'#f472b6',background:'#000',backgroundOpacity:0},Neon:{font:'Inter',size:38,weight:800,color:'#e0f2fe',highlightColor:'#67e8f9',background:'#082f49',backgroundOpacity:60},Social:{font:'Arial',size:40,weight:900,color:'#fff',highlightColor:'#fb7185',background:'#000',backgroundOpacity:40}};
-export function StylePanel({style,setStyle,animation,setAnimation}:{style:SubtitleStyle;setStyle:(s:SubtitleStyle)=>void;animation:SubtitleAnimation;setAnimation:(a:SubtitleAnimation)=>void}){const patch=(p:Partial<SubtitleStyle>)=>setStyle({...style,...p});return <div className="space-y-5"> <section><label className="mb-2 block text-xs font-medium text-zinc-500">Preset</label><div className="grid grid-cols-2 gap-2">{Object.keys(presets).map(p=><button key={p} onClick={()=>patch({...presets[p],preset:p})} className={`rounded-lg border px-3 py-2 text-left text-xs ${style.preset===p?'border-white bg-white/10':'border-white/10'}`}>{p}</button>)}</div></section><section className="space-y-3"><label className="block text-xs font-medium text-zinc-500">Typography</label><select value={style.font} onChange={e=>patch({font:e.target.value})} className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm"><option>Inter</option><option>Arial</option><option>Georgia</option><option>monospace</option></select><div className="grid grid-cols-2 gap-2"><Field label="Size"><input type="number" value={style.size} onChange={e=>patch({size:+e.target.value})}/></Field><Field label="Weight"><input type="number" value={style.weight} onChange={e=>patch({weight:+e.target.value})}/></Field></div></section><section className="space-y-3"><label className="block text-xs font-medium text-zinc-500">Appearance</label><div className="grid grid-cols-2 gap-2"><Field label="Text"><input type="color" value={style.color} onChange={e=>patch({color:e.target.value})}/></Field><Field label="Highlight"><input type="color" value={style.highlightColor} onChange={e=>patch({highlightColor:e.target.value})}/></Field></div><Field label="Opacity"><input className="w-full" type="range" min={0} max={100} value={style.backgroundOpacity} onChange={e=>patch({backgroundOpacity:+e.target.value})}/></Field></section><section className="space-y-3"><label className="block text-xs font-medium text-zinc-500">Position</label><div className="grid grid-cols-3 gap-2">{(['top','center','bottom'] as const).map(p=><button key={p} onClick={()=>patch({position:p})} className={`rounded-lg border px-2 py-2 text-xs capitalize ${style.position===p?'border-cyan-400 bg-cyan-400/10':'border-white/10'}`}>{p}</button>)}</div></section><section className="space-y-3"><label className="block text-xs font-medium text-zinc-500">Animation</label><select value={animation.preset} onChange={e=>setAnimation({...animation,preset:e.target.value})} className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm">{['None','Fade','Pop','Bounce','Slide Up','Slide Down','Scale','Typewriter','Word Pop','Karaoke'].map(x=><option key={x}>{x}</option>)}</select><Field label="Intensity"><input className="w-full" type="range" min={0} max={100} value={animation.intensity} onChange={e=>setAnimation({...animation,intensity:+e.target.value})}/></Field></section></div>}
-function Field({label,children}:{label:string;children:React.ReactNode}){return <label className="block text-xs text-zinc-500">{label}<div className="mt-1 rounded-lg border border-white/10 bg-white/5 p-1.5 text-white">{children}</div></label>}
+"use client";
+
+type SubtitleStyle = {
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: number;
+  color?: string;
+  highlightColor?: string;
+  background?: string;
+  backgroundOpacity?: number;
+  position?: "top" | "center" | "bottom";
+  textAlign?: "left" | "center" | "right";
+};
+
+type StylePanelProps = {
+  style?: SubtitleStyle;
+  onChange?: (style: SubtitleStyle) => void;
+};
+
+const presets: Record<string, SubtitleStyle> = {
+  Classic: {
+    fontFamily: "Arial",
+    fontSize: 32,
+    fontWeight: 600,
+    color: "#ffffff",
+    highlightColor: "#facc15",
+    background: "#000000",
+    backgroundOpacity: 0.5,
+    position: "bottom",
+    textAlign: "center",
+  },
+
+  Bold: {
+    fontFamily: "Arial",
+    fontSize: 40,
+    fontWeight: 800,
+    color: "#ffffff",
+    highlightColor: "#ef4444",
+    background: "#000000",
+    backgroundOpacity: 0.35,
+    position: "bottom",
+    textAlign: "center",
+  },
+
+  Creator: {
+    fontFamily: "Arial",
+    fontSize: 36,
+    fontWeight: 800,
+    color: "#ffffff",
+    highlightColor: "#a78bfa",
+    background: "#000000",
+    backgroundOpacity: 0.2,
+    position: "center",
+    textAlign: "center",
+  },
+
+  Minimal: {
+    fontFamily: "Arial",
+    fontSize: 28,
+    fontWeight: 500,
+    color: "#ffffff",
+    highlightColor: "#ffffff",
+    background: "#000000",
+    backgroundOpacity: 0,
+    position: "bottom",
+    textAlign: "center",
+  },
+
+  Karaoke: {
+    fontFamily: "Arial",
+    fontSize: 34,
+    fontWeight: 800,
+    color: "#ffffff",
+    highlightColor: "#22c55e",
+    background: "#000000",
+    backgroundOpacity: 0.4,
+    position: "bottom",
+    textAlign: "center",
+  },
+
+  Neon: {
+    fontFamily: "Arial",
+    fontSize: 34,
+    fontWeight: 800,
+    color: "#ffffff",
+    highlightColor: "#22d3ee",
+    background: "#000000",
+    backgroundOpacity: 0.35,
+    position: "center",
+    textAlign: "center",
+  },
+
+  Social: {
+    fontFamily: "Arial",
+    fontSize: 38,
+    fontWeight: 900,
+    color: "#ffffff",
+    highlightColor: "#f472b6",
+    background: "#000000",
+    backgroundOpacity: 0.25,
+    position: "bottom",
+    textAlign: "center",
+  },
+};
+
+export default function StylePanel({
+  style = presets.Classic,
+  onChange,
+}: StylePanelProps) {
+  const update = (changes: Partial<SubtitleStyle>) => {
+    onChange?.({
+      ...style,
+      ...changes,
+    });
+  };
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <h3 className="mb-4 font-medium text-white">
+        Subtitle Style
+      </h3>
+
+      <div className="grid grid-cols-2 gap-2">
+        {Object.entries(presets).map(([name, preset]) => (
+          <button
+            key={name}
+            type="button"
+            onClick={() => onChange?.(preset)}
+            className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-left text-xs text-white transition hover:bg-white/10"
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-5 space-y-4">
+        <div>
+          <label className="mb-1 block text-xs text-white/50">
+            Font
+          </label>
+
+          <select
+            value={style.fontFamily}
+            onChange={(e) =>
+              update({ fontFamily: e.target.value })
+            }
+            className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white"
+          >
+            <option>Arial</option>
+            <option>Inter</option>
+            <option>Georgia</option>
+            <option>Verdana</option>
+            <option>Impact</option>
+            <option>Courier New</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs text-white/50">
+            Size
+          </label>
+
+          <input
+            type="range"
+            min="12"
+            max="96"
+            value={style.fontSize}
+            onChange={(e) =>
+              update({
+                fontSize: Number(e.target.value),
+              })
+            }
+            className="w-full"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs text-white/50">
+            Text Color
+          </label>
+
+          <input
+            type="color"
+            value={style.color}
+            onChange={(e) =>
+              update({ color: e.target.value })
+            }
+            className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs text-white/50">
+            Highlight Color
+          </label>
+
+          <input
+            type="color"
+            value={style.highlightColor}
+            onChange={(e) =>
+              update({
+                highlightColor: e.target.value,
+              })
+            }
+            className="h-10 w-full cursor-pointer rounded-lg border border-white/10 bg-transparent"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs text-white/50">
+            Position
+          </label>
+
+          <div className="grid grid-cols-3 gap-2">
+            {(["top", "center", "bottom"] as const).map(
+              (position) => (
+                <button
+                  key={position}
+                  type="button"
+                  onClick={() => update({ position })}
+                  className={`rounded-lg border px-2 py-2 text-xs capitalize ${
+                    style.position === position
+                      ? "border-white/30 bg-white/10 text-white"
+                      : "border-white/10 text-white/50"
+                  }`}
+                >
+                  {position}
+                </button>
+              )
+            )}
+          </div>
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs text-white/50">
+            Alignment
+          </label>
+
+          <div className="grid grid-cols-3 gap-2">
+            {(["left", "center", "right"] as const).map(
+              (textAlign) => (
+                <button
+                  key={textAlign}
+                  type="button"
+                  onClick={() => update({ textAlign })}
+                  className={`rounded-lg border px-2 py-2 text-xs capitalize ${
+                    style.textAlign === textAlign
+                      ? "border-white/30 bg-white/10 text-white"
+                      : "border-white/10 text-white/50"
+                  }`}
+                >
+                  {textAlign}
+                </button>
+              )
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
