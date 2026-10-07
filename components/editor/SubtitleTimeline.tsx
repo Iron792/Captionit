@@ -1,3 +1,135 @@
-'use client';
-import {Plus,Scissors,Trash2,Merge,Undo2,Redo2} from 'lucide-react';import {SubtitleSegment} from '@/types/subtitle';
-export function SubtitleTimeline({segments,current,onSeek,onChange,zoom,setZoom,undo,redo,canUndo,canRedo}:{segments:SubtitleSegment[];current:number;onSeek:(n:number)=>void;onChange:(s:SubtitleSegment[])=>void;zoom:number;setZoom:(n:number)=>void;undo:()=>void;redo:()=>void;canUndo:boolean;canRedo:boolean}){const end=Math.max(10,...segments.map(s=>s.end),current+1);const split=()=>{const x=segments.find(s=>current>=s.start&&current<=s.end);if(!x||current<=x.start+.1||current>=x.end-.1)return;const a={...x,id:x.id+'a',end:current,text:x.text.slice(0,Math.max(1,Math.floor(x.text.length*(current-x.start)/(x.end-x.start))))};const b={...x,id:x.id+'b',start:current,text:x.text.slice(a.text.length).trim()};onChange(segments.flatMap(s=>s.id===x.id?[a,b]:[s]))};return <div className="rounded-2xl border border-white/10 bg-zinc-950/80 p-3"><div className="mb-3 flex items-center gap-2"><button disabled={!canUndo} onClick={undo} className="rounded-lg p-2 hover:bg-white/5 disabled:opacity-30"><Undo2 size={15}/></button><button disabled={!canRedo} onClick={redo} className="rounded-lg p-2 hover:bg-white/5 disabled:opacity-30"><Redo2 size={15}/></button><button onClick={()=>onChange([...segments,{id:crypto.randomUUID(),start:current,end:Math.min(end,current+2),text:'New caption'}])} className="ml-2 flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-black"><Plus size={14}/> Add</button><button onClick={split} className="flex items-center gap-1 rounded-lg border border-white/10 px-3 py-1.5 text-xs"><Scissors size={14}/> Split</button><div className="ml-auto flex items-center gap-2 text-xs text-zinc-500">Zoom <input type="range" min={1} max={8} value={zoom} onChange={e=>setZoom(+e.target.value)}/></div></div><div className="relative h-36 overflow-x-auto thin-scroll"><div style={{width:`${end*zoom*55}px`,minWidth:'100%'}} className="relative h-full"><div className="absolute inset-x-0 top-1/2 border-t border-white/5"/>{segments.map(s=><button key={s.id} onClick={()=>onSeek(s.start)} style={{left:`${s.start/end*100}%`,width:`${Math.max(1,(s.end-s.start)/end*100)}%`}} className={`absolute top-12 h-14 min-w-12 overflow-hidden rounded-lg border px-2 text-left text-[11px] ${current>=s.start&&current<=s.end?'border-cyan-400 bg-cyan-400/15':'border-white/10 bg-white/5'}`}><span className="line-clamp-2">{s.text}</span></button>)}<div style={{left:`${current/end*100}%`}} className="absolute bottom-0 top-0 w-px bg-red-400"><div className="-ml-1.5 size-3 rounded-full bg-red-400"/></div></div></div></div>}
+"use client";
+
+type SubtitleSegment = {
+  id: string;
+  start: number;
+  end: number;
+  text: string;
+};
+
+type SubtitleTimelineProps = {
+  subtitles?: SubtitleSegment[];
+  duration?: number;
+  currentTime?: number;
+  onSeek?: (time: number) => void;
+  onUpdate?: (subtitles: SubtitleSegment[]) => void;
+};
+
+export default function SubtitleTimeline({
+  subtitles = [],
+  duration = 60,
+  currentTime = 0,
+  onSeek,
+  onUpdate,
+}: SubtitleTimelineProps) {
+  const safeDuration = Math.max(duration, 1);
+
+  const updateSubtitle = (
+    id: string,
+    changes: Partial<SubtitleSegment>
+  ) => {
+    onUpdate?.(
+      subtitles.map((subtitle) =>
+        subtitle.id === id
+          ? { ...subtitle, ...changes }
+          : subtitle
+      )
+    );
+  };
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-medium text-white">
+          Subtitle Timeline
+        </h3>
+
+        <span className="text-xs text-white/40">
+          {currentTime.toFixed(1)}s / {safeDuration.toFixed(1)}s
+        </span>
+      </div>
+
+      <div
+        className="relative h-28 overflow-hidden rounded-xl bg-black/40"
+        onClick={(e) => {
+          const rect =
+            e.currentTarget.getBoundingClientRect();
+
+          const ratio =
+            (e.clientX - rect.left) / rect.width;
+
+          onSeek?.(
+            Math.max(
+              0,
+              Math.min(safeDuration, ratio * safeDuration)
+            )
+          );
+        }}
+      >
+        <div
+          className="absolute bottom-0 top-0 z-20 w-px bg-red-400"
+          style={{
+            left: `${(currentTime / safeDuration) * 100}%`,
+          }}
+        />
+
+        {subtitles.map((subtitle) => {
+          const left =
+            (subtitle.start / safeDuration) * 100;
+
+          const width =
+            ((subtitle.end - subtitle.start) /
+              safeDuration) *
+            100;
+
+          return (
+            <button
+              key={subtitle.id}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSeek?.(subtitle.start);
+              }}
+              className="absolute top-6 h-12 overflow-hidden rounded-md border border-white/20 bg-white/10 px-2 text-left text-xs text-white transition hover:bg-white/20"
+              style={{
+                left: `${left}%`,
+                width: `${Math.max(width, 2)}%`,
+              }}
+            >
+              <span className="block truncate">
+                {subtitle.text}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {subtitles.map((subtitle) => (
+          <div
+            key={subtitle.id}
+            className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.02] p-2"
+          >
+            <span className="w-12 text-xs text-white/40">
+              {subtitle.start.toFixed(1)}
+            </span>
+
+            <input
+              value={subtitle.text}
+              onChange={(e) =>
+                updateSubtitle(subtitle.id, {
+                  text: e.target.value,
+                })
+              }
+              className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none"
+            />
+
+            <span className="text-xs text-white/40">
+              {subtitle.end.toFixed(1)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
