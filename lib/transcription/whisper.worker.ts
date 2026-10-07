@@ -38,12 +38,37 @@ type WorkerResponse =
       message: string;
     };
 
-type WhisperPipeline = Awaited<
-  ReturnType<typeof pipeline>
->;
+/*
+ * Do NOT use:
+ *
+ * type WhisperPipeline = Awaited<
+ *   ReturnType<typeof pipeline>
+ * >;
+ *
+ * Transformers.js has a very large overloaded
+ * pipeline() type. TypeScript can fail with:
+ * "Expression produces a union type that is too
+ * complex to represent."
+ *
+ * Keep only the part of the pipeline API that
+ * this worker actually uses.
+ */
+type WhisperResult = {
+  chunks?: WordChunk[];
+};
+
+type WhisperTranscriber = (
+  audio: Float32Array,
+  options: {
+    return_timestamps: "word";
+    chunk_length_s: number;
+    stride_length_s: number;
+    task: "transcribe";
+  }
+) => Promise<WhisperResult>;
 
 let transcriberPromise:
-  | Promise<WhisperPipeline>
+  | Promise<WhisperTranscriber>
   | null = null;
 
 const MODEL =
@@ -55,45 +80,52 @@ function post(
   self.postMessage(message);
 }
 
-async function getTranscriber() {
+async function getTranscriber(): Promise<WhisperTranscriber> {
   if (!transcriberPromise) {
-    transcriberPromise = pipeline(
-      "automatic-speech-recognition",
-      MODEL,
-      {
-        dtype: "q4",
+    transcriberPromise =
+      (pipeline(
+        "automatic-speech-recognition",
+        MODEL,
+        {
+          dtype: "q4",
 
-        device:
-          typeof navigator !== "undefined" &&
-          "gpu" in navigator
-            ? "webgpu"
-            : "wasm",
+          device:
+            typeof navigator !==
+              "undefined" &&
+            "gpu" in navigator
+              ? "webgpu"
+              : "wasm",
 
-        progress_callback: (info) => {
-          if (
-            info.status ===
-            "progress_total"
-          ) {
-            post({
-              type: "progress",
-              progress:
-                info.progress ?? 0,
-              message:
-                "Downloading Whisper model…",
-            });
-          }
+          progress_callback:
+            (info) => {
+              if (
+                info.status ===
+                "progress_total"
+              ) {
+                post({
+                  type: "progress",
+                  progress:
+                    info.progress ??
+                    0,
+                  message:
+                    "Downloading Whisper model…",
+                });
+              }
 
-          if (info.status === "ready") {
-            post({
-              type: "progress",
-              progress: 100,
-              message:
-                "Whisper model ready",
-            });
-          }
-        },
-      }
-    );
+              if (
+                info.status ===
+                "ready"
+              ) {
+                post({
+                  type: "progress",
+                  progress: 100,
+                  message:
+                    "Whisper model ready",
+                });
+              }
+            },
+        }
+      ) as unknown as Promise<WhisperTranscriber>);
   }
 
   return transcriberPromise;
@@ -102,7 +134,8 @@ async function getTranscriber() {
 function readWav(
   buffer: ArrayBuffer
 ): Float32Array {
-  const view = new DataView(buffer);
+  const view =
+    new DataView(buffer);
 
   const readString = (
     offset: number,
@@ -116,7 +149,9 @@ function readWav(
       i++
     ) {
       value += String.fromCharCode(
-        view.getUint8(offset + i)
+        view.getUint8(
+          offset + i
+        )
       );
     }
 
@@ -153,6 +188,13 @@ function readWav(
         true
       );
 
+    if (
+      offset + 8 + chunkSize >
+      view.byteLength
+    ) {
+      break;
+    }
+
     if (chunkId === "fmt ") {
       const audioFormat =
         view.getUint16(
@@ -188,7 +230,9 @@ function readWav(
       }
     }
 
-    if (chunkId === "data") {
+    if (
+      chunkId === "data"
+    ) {
       dataOffset =
         offset + 8;
 
@@ -205,7 +249,9 @@ function readWav(
     offset +=
       8 + chunkSize;
 
-    if (offset % 2 !== 0) {
+    if (
+      offset % 2 !== 0
+    ) {
       offset++;
     }
   }
@@ -262,7 +308,9 @@ function readWav(
 
       let sample = 0;
 
-      if (bitsPerSample === 16) {
+      if (
+        bitsPerSample === 16
+      ) {
         sample =
           view.getInt16(
             sampleOffset,
@@ -322,13 +370,19 @@ function makeSegments(
     const rawText =
       chunk.text?.trim();
 
-    if (!rawText) continue;
+    if (!rawText) {
+      continue;
+    }
 
     const start =
-      Number(chunk.timestamp?.[0]);
+      Number(
+        chunk.timestamp?.[0]
+      );
 
     const end =
-      Number(chunk.timestamp?.[1]);
+      Number(
+        chunk.timestamp?.[1]
+      );
 
     if (
       !Number.isFinite(start) ||
@@ -350,6 +404,7 @@ function makeSegments(
         end,
         words: [word],
       };
+
       continue;
     }
 
@@ -367,13 +422,22 @@ function makeSegments(
         current.words;
 
       segments.push({
-        id: `caption-${segments.length + 1}`,
-        start: current.start,
+        id: `caption-${
+          segments.length + 1
+        }`,
+        start:
+          current.start,
         end: current.end,
         text: words
-          .map((item) => item.text)
+          .map(
+            (item) =>
+              item.text
+          )
           .join(" ")
-          .replace(/\s+([,.!?])/g, "$1"),
+          .replace(
+            /\s+([,.!?])/g,
+            "$1"
+          ),
         words,
       });
 
@@ -383,7 +447,10 @@ function makeSegments(
         words: [word],
       };
     } else {
-      current.words.push(word);
+      current.words.push(
+        word
+      );
+
       current.end = end;
     }
   }
@@ -393,13 +460,22 @@ function makeSegments(
       current.words;
 
     segments.push({
-      id: `caption-${segments.length + 1}`,
-      start: current.start,
+      id: `caption-${
+        segments.length + 1
+      }`,
+      start:
+        current.start,
       end: current.end,
       text: words
-        .map((item) => item.text)
+        .map(
+          (item) =>
+            item.text
+        )
         .join(" ")
-        .replace(/\s+([,.!?])/g, "$1"),
+        .replace(
+          /\s+([,.!?])/g,
+          "$1"
+        ),
       words,
     });
   }
@@ -409,7 +485,9 @@ function makeSegments(
 
 self.addEventListener(
   "message",
-  async (event: MessageEvent<WorkerRequest>) => {
+  async (
+    event: MessageEvent<WorkerRequest>
+  ) => {
     if (
       event.data.type !==
       "transcribe"
@@ -457,8 +535,8 @@ self.addEventListener(
           result
         )
           ? []
-          : ((result.chunks ??
-              []) as WordChunk[]);
+          : result.chunks ??
+            [];
 
       const segments =
         makeSegments(
