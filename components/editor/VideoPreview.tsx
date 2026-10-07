@@ -27,13 +27,8 @@ export default function VideoPreview({
 }: VideoPreviewProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  /*
-   * Keep video play/pause state synchronized
-   * with the editor state.
-   */
   useEffect(() => {
     const video = videoRef.current;
-
     if (!video) return;
 
     if (playing) {
@@ -45,131 +40,114 @@ export default function VideoPreview({
     }
   }, [playing, setPlaying]);
 
-  /*
-   * Seek video when the timeline/editor changes
-   * the current time.
-   */
   useEffect(() => {
     const video = videoRef.current;
-
     if (!video) return;
 
     if (
-      Math.abs(video.currentTime - currentTime) >
-      0.35
+      Math.abs(video.currentTime - currentTime) > 0.3
     ) {
       video.currentTime = currentTime;
     }
   }, [currentTime]);
 
-  /*
-   * Find currently active subtitle.
-   */
   const activeSubtitle = segments.find(
     (segment) =>
       currentTime >= segment.start &&
       currentTime <= segment.end
   );
 
-  const positionStyle =
+  const subtitlePosition =
     style.position === "top"
       ? {
-          top: `${100 - style.y}%`,
+          top: "8%",
+          transform: "translateX(-50%)",
         }
       : style.position === "center"
         ? {
             top: "50%",
-            transform:
-              "translate(-50%, -50%)",
+            transform: "translate(-50%, -50%)",
           }
         : {
-            bottom: `${100 - style.y}%`,
+            bottom: "10%",
+            transform: "translateX(-50%)",
           };
 
   return (
-    <div className="relative flex h-full min-h-[400px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black">
-      <video
-        ref={videoRef}
-        src={url}
-        playsInline
-        preload="metadata"
-        className="max-h-full max-w-full object-contain"
-        onLoadedMetadata={(event) => {
-          const duration =
-            event.currentTarget.duration;
-
-          if (
-            Number.isFinite(duration) &&
-            duration > 0 &&
-            currentTime > duration
-          ) {
-            onTime(duration);
+    <div className="flex h-full w-full items-center justify-center">
+      {/* Responsive video canvas */}
+      <div className="relative flex h-full max-h-[calc(100dvh-190px)] w-full max-w-5xl items-center justify-center overflow-hidden rounded-xl bg-black sm:rounded-2xl lg:max-h-full">
+        <video
+          ref={videoRef}
+          src={url}
+          playsInline
+          preload="metadata"
+          className="h-full w-full object-contain"
+          onTimeUpdate={(event) =>
+            onTime(
+              event.currentTarget.currentTime
+            )
           }
-        }}
-        onTimeUpdate={(event) => {
-          onTime(
-            event.currentTarget.currentTime
-          );
-        }}
-        onPlay={() => {
-          setPlaying(true);
-        }}
-        onPause={() => {
-          setPlaying(false);
-        }}
-        onEnded={() => {
-          setPlaying(false);
-        }}
-      />
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          onEnded={() => setPlaying(false)}
+        />
 
-      {/* Subtitle */}
-      {activeSubtitle && (
-        <div
-          className="pointer-events-none absolute left-1/2 max-w-[90%] text-center"
-          style={{
-            ...positionStyle,
-            left: `${style.x}%`,
-            fontFamily: style.font,
-            fontSize: `${style.size}px`,
-            fontWeight: style.weight,
-            letterSpacing: `${style.letterSpacing}px`,
-            lineHeight: style.lineHeight,
-            color: style.color,
-            textAlign: style.align,
-            padding: `${style.padding}px`,
-            borderRadius: `${style.radius}px`,
-            backgroundColor: style.background,
-            opacity:
-              style.backgroundOpacity / 100,
-            textShadow:
-              style.shadow > 0
-                ? `0 0 ${style.shadow}px rgba(0,0,0,0.85)`
-                : "none",
-            WebkitTextStroke:
-              style.outline > 0
-                ? `${style.outline}px rgba(0,0,0,0.8)`
-                : "0 transparent",
-          }}
-        >
-          {activeSubtitle.text}
+        {/* Captions */}
+        {activeSubtitle && (
+          <div
+            className="pointer-events-none absolute left-1/2 max-w-[88%] text-center sm:max-w-[80%]"
+            style={{
+              ...subtitlePosition,
+              left: `${style.x}%`,
+              fontFamily: style.font,
+              fontSize: `clamp(18px, 3vw, ${style.size}px)`,
+              fontWeight: style.weight,
+              letterSpacing: `${style.letterSpacing}px`,
+              lineHeight: style.lineHeight,
+              color: style.color,
+              textAlign: style.align,
+              padding: `${style.padding}px`,
+              borderRadius: `${style.radius}px`,
+              backgroundColor: style.background,
+              background:
+                style.backgroundOpacity > 0
+                  ? `${style.background}${Math.round(
+                      (style.backgroundOpacity /
+                        100) *
+                        255
+                    )
+                      .toString(16)
+                      .padStart(2, "0")}`
+                  : "transparent",
+              textShadow:
+                style.shadow > 0
+                  ? `0 2px ${style.shadow}px rgba(0,0,0,.9)`
+                  : "none",
+              WebkitTextStroke:
+                style.outline > 0
+                  ? `${style.outline}px rgba(0,0,0,.8)`
+                  : undefined,
+            }}
+          >
+            {activeSubtitle.text}
+          </div>
+        )}
+
+        {/* Compact controls */}
+        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/10 bg-black/80 px-4 py-2 backdrop-blur sm:bottom-4">
+          <button
+            type="button"
+            onClick={() => setPlaying(!playing)}
+            className="text-xs font-medium text-white"
+          >
+            {playing ? "Pause" : "Play"}
+          </button>
+
+          <span className="text-xs tabular-nums text-zinc-400">
+            {currentTime.toFixed(1)}s
+          </span>
         </div>
-      )}
-
-      {/* Controls */}
-      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/10 bg-black/75 px-4 py-2 shadow-xl backdrop-blur">
-        <button
-          type="button"
-          onClick={() =>
-            setPlaying(!playing)
-          }
-          className="text-xs font-medium text-white transition hover:text-cyan-300"
-        >
-          {playing ? "Pause" : "Play"}
-        </button>
-
-        <span className="text-xs tabular-nums text-zinc-400">
-          {currentTime.toFixed(1)}s
-        </span>
       </div>
     </div>
   );
