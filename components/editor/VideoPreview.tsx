@@ -1,6 +1,107 @@
-'use client';
-import {Pause,Play,Volume2,VolumeX,Maximize2} from 'lucide-react';
-import {useEffect,useRef} from 'react';
-import {SubtitleSegment,SubtitleStyle} from '@/types/subtitle';
-export function VideoPreview({url,currentTime,onTime,playing,setPlaying,segments,style}:{url:string;currentTime:number;onTime:(n:number)=>void;playing:boolean;setPlaying:(b:boolean)=>void;segments:SubtitleSegment[];style:SubtitleStyle}){const ref=useRef<HTMLVideoElement>(null);useEffect(()=>{if(ref.current&&Math.abs(ref.current.currentTime-currentTime)>.25)ref.current.currentTime=currentTime},[currentTime]);useEffect(()=>{if(ref.current){playing?ref.current.play().catch(()=>{}):ref.current.pause()}},[playing]);const active=segments.find(s=>currentTime>=s.start&&currentTime<=s.end);const words=active?.words||[];return <div className="relative flex h-full min-h-[360px] items-center justify-center overflow-hidden rounded-2xl bg-black"><video ref={ref} src={url} className="max-h-full max-w-full object-contain" onTimeUpdate={e=>onTime(e.currentTarget.currentTime)} onPlay={()=>setPlaying(true)} onPause={()=>setPlaying(false)} playsInline/><div className={`pointer-events-none absolute inset-0 flex ${style.position==='top'?'items-start pt-8':style.position==='bottom'?'items-end pb-14':'items-center'} justify-center px-6`}><div style={{color:style.color,fontSize:style.size,fontWeight:style.weight,letterSpacing:style.letterSpacing,lineHeight:style.lineHeight,textAlign:style.align,background:style.background,backgroundColor:`color-mix(in srgb, ${style.background} ${style.backgroundOpacity}%, transparent)`,padding:style.padding,borderRadius:style.radius,textShadow:`0 3px ${style.shadow}px rgba(0,0,0,.7)`,WebkitTextStroke:`${style.outline}px #000`}} className="max-w-[85%] transition-all duration-150">{words.length?words.map((w,i)=><span key={i} className={currentTime>=w.start&&currentTime<=w.end?'rounded px-1':''} style={currentTime>=w.start&&currentTime<=w.end?{color:style.highlightColor}:{}}>{w.word}{' '}</span>):active?.text}</div></div><div className="absolute bottom-3 left-3 right-3 flex items-center gap-3 rounded-xl bg-black/65 px-3 py-2 backdrop-blur"><button onClick={()=>setPlaying(!playing)}>{playing?<Pause size={17}/>:<Play size={17}/>}</button><span className="text-xs tabular-nums text-zinc-300">{fmt(currentTime)}</span><input aria-label="seek" type="range" min={0} max={ref.current?.duration||1} value={currentTime} onChange={e=>{const t=+e.target.value;if(ref.current)ref.current.currentTime=t;onTime(t)}} className="flex-1 accent-white"/><button onClick={()=>{if(ref.current)ref.current.muted=!ref.current.muted}}>{ref.current?.muted?<VolumeX size={17}/>:<Volume2 size={17}/>}</button><button onClick={()=>ref.current?.requestFullscreen()}><Maximize2 size={17}/></button></div></div>}
-const fmt=(s:number)=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+"use client";
+
+import { useEffect, useRef } from "react";
+
+type Word = {
+  word: string;
+  start: number;
+  end: number;
+};
+
+type SubtitleSegment = {
+  id: string;
+  start: number;
+  end: number;
+  text: string;
+  words?: Word[];
+};
+
+type VideoPreviewProps = {
+  videoUrl?: string;
+  subtitles?: SubtitleSegment[];
+  currentTime?: number;
+  onTimeUpdate?: (time: number) => void;
+  onDurationChange?: (duration: number) => void;
+};
+
+export default function VideoPreview({
+  videoUrl,
+  subtitles = [],
+  currentTime = 0,
+  onTimeUpdate,
+  onDurationChange,
+}: VideoPreviewProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (Math.abs(video.currentTime - currentTime) > 0.4) {
+      video.currentTime = currentTime;
+    }
+  }, [currentTime]);
+
+  const activeSubtitle = subtitles.find(
+    (subtitle) =>
+      currentTime >= subtitle.start &&
+      currentTime <= subtitle.end
+  );
+
+  const activeWordIndex =
+    activeSubtitle?.words?.findIndex(
+      (word) =>
+        currentTime >= word.start &&
+        currentTime <= word.end
+    ) ?? -1;
+
+  return (
+    <div className="relative flex min-h-[420px] items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-black">
+      {videoUrl ? (
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          controls
+          playsInline
+          className="max-h-[70vh] w-full object-contain"
+          onTimeUpdate={(e) =>
+            onTimeUpdate?.(e.currentTarget.currentTime)
+          }
+          onLoadedMetadata={(e) =>
+            onDurationChange?.(e.currentTarget.duration)
+          }
+        />
+      ) : (
+        <div className="text-center text-white/40">
+          <div className="mb-3 text-4xl">▶</div>
+          <p>Upload a video to start editing</p>
+        </div>
+      )}
+
+      {activeSubtitle && (
+        <div className="pointer-events-none absolute bottom-16 left-1/2 w-[90%] -translate-x-1/2 text-center">
+          <div className="inline-block rounded-lg bg-black/50 px-4 py-2 backdrop-blur-sm">
+            {activeSubtitle.words?.length ? (
+              activeSubtitle.words.map((word, index) => (
+                <span
+                  key={`${activeSubtitle.id}-${index}`}
+                  className={`mx-1 inline-block font-bold transition-all ${
+                    index === activeWordIndex
+                      ? "scale-110 text-yellow-300"
+                      : "text-white"
+                  }`}
+                >
+                  {word.word}
+                </span>
+              ))
+            ) : (
+              <span className="font-bold text-white">
+                {activeSubtitle.text}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
