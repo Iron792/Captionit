@@ -1,3 +1,0 @@
-import {NextRequest,NextResponse} from 'next/server';
-import {demoTranscript} from '@/lib/transcription/mock';
-export async function POST(req:NextRequest){try{const body=await req.json();const duration=Number(body.duration||60);const provider=process.env.TRANSCRIPTION_PROVIDER||'demo';if(provider==='demo')return NextResponse.json({segments:demoTranscript(duration),provider});return NextResponse.json({error:'Configured transcription provider is not implemented. Add its adapter in lib/transcription.'},{status:501})}catch{return NextResponse.json({error:'Invalid transcription request'},{status:400})}}
